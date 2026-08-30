@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 9 et suivants bloquent par défaut le HTTP en clair. Or le serveur de
+  course en réseau local tourne en http:// sur une adresse privée (192.168.x.x),
+  sans certificat : sans cette autorisation, le mode COURSE EN LIGNE échouerait
+  silencieusement dans l'application, alors qu'il marche dans un navigateur.
+
+  L'autorisation ne concerne que le trafic en clair ; le HTTPS reste vérifié
+  normalement. Si tu préfères la restreindre, remplace <base-config> par des
+  entrées <domain> listant l'adresse exacte de ton serveur.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

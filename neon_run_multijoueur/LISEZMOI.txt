@@ -1,0 +1,96 @@
+NEON RUN — COURSE EN LIGNE SUR RÉSEAU LOCAL
+===========================================
+
+CE QU'IL Y A DANS CE DOSSIER
+  neon_runner7_securise.html   le jeu (à ouvrir normalement, tout marche déjà)
+  serveur_course.js            le petit serveur qui relie les joueurs entre eux
+  LISEZMOI.txt                 ce fichier
+
+
+POURQUOI UN SERVEUR ?
+  Un fichier HTML ouvert dans un navigateur ne peut pas, tout seul, recevoir
+  des connexions venant d'autres ordinateurs : les navigateurs l'interdisent.
+  Il faut donc UN programme, sur UN seul poste, qui serve de point de rendez-vous.
+  C'est tout ce que fait serveur_course.js — environ 250 lignes, aucune
+  bibliothèque à installer, rien d'écrit sur le disque.
+
+
+MISE EN ROUTE (5 minutes, une seule fois)
+  1. Sur UN des ordinateurs (celui qui fera « l'hôte »), installe Node.js
+     s'il n'est pas déjà là :  https://nodejs.org  (version LTS)
+
+  2. Mets serveur_course.js ET neon_runner7_securise.html dans le même dossier.
+
+  3. Ouvre un terminal dans ce dossier et lance :
+
+         node serveur_course.js
+
+  4. Le serveur affiche quelque chose comme :
+
+         Sur ce PC     : http://localhost:8080
+         Réseau local  : http://192.168.1.24:8080   ← à donner aux autres joueurs
+
+  5. Chaque joueur (y compris l'hôte) ouvre l'adresse « Réseau local » dans son
+     navigateur. Le jeu se charge tout seul, déjà relié au serveur.
+
+
+LANCER UNE COURSE
+  1. Chacun clique sur  🌐 COURSE EN LIGNE  dans le menu.
+  2. L'adresse du serveur est déjà pré-remplie. Chacun tape le MÊME nom de
+     salon (par exemple : amis) puis clique sur REJOINDRE.
+  3. La liste des joueurs connectés s'affiche chez tout le monde.
+  4. UN SEUL joueur clique sur LANCER LA COURSE.
+  5. Compte à rebours de 4 secondes, puis départ simultané.
+
+  Tout le monde court sur EXACTEMENT la même piste : le serveur envoie une
+  « graine » commune, et chaque jeu en déduit la même suite d'obstacles.
+  Tu peux le vérifier en appuyant sur F3 (fenêtre développeur) : la ligne
+  « Piste graine … » affiche le même nombre chez tous les joueurs.
+
+  Pendant la course, les adversaires apparaissent :
+    • en points colorés sur la barre de progression en haut de l'écran,
+    • en silhouettes translucides sur la piste, à leur position réelle.
+
+  Le classement est calculé par le serveur : ordre d'arrivée d'abord, puis
+  ceux encore en course, puis les éliminés. Récompenses : 400 / 200 / 90 pièces.
+
+  Après la course, REJOUER ramène au salon — n'importe qui peut relancer une
+  nouvelle manche, avec une nouvelle piste.
+
+
+CHANGER LE PORT
+      PORT=3000 node serveur_course.js
+
+
+SI ÇA NE MARCHE PAS
+  • « Impossible de rejoindre : serveur injoignable »
+      → vérifie que le serveur tourne toujours (la fenêtre du terminal est
+        ouverte), et que l'adresse est exactement celle affichée par le serveur.
+
+  • Ça marche sur le PC hôte mais pas sur les autres
+      → c'est le pare-feu de l'hôte qui bloque le port 8080. Autorise Node.js
+        dans le pare-feu, ou essaie un autre port (voir ci-dessus).
+      → vérifie aussi que tous les appareils sont sur le MÊME réseau Wi-Fi
+        (attention aux réseaux « invité » qui isolent les appareils entre eux).
+
+  • Un joueur disparaît de la liste
+      → le serveur retire un joueur qui n'a plus donné signe de vie pendant
+        12 secondes (onglet fermé, Wi-Fi coupé). Il lui suffit de recliquer
+        sur REJOINDRE.
+
+  • Adresse IP introuvable
+      → Windows : ipconfig     macOS/Linux : ifconfig  ou  ip addr
+        Cherche une adresse du type 192.168.x.x ou 10.x.x.x
+
+
+REMARQUES HONNÊTES
+  • Le serveur ne fait aucune vérification anti-triche : il croit ce que
+    chaque joueur lui envoie. Entre amis sur un réseau local, c'est suffisant ;
+    ça ne conviendrait pas à un classement public.
+  • Les triches du panel admin (invincibilité, vitesse…) restent actives en
+    course en ligne. À toi de les couper avant une partie sérieuse — la fenêtre
+    F3 affiche le multiplicateur de vitesse en cours, et un badge « TRICHE
+    ACTIVE » s'affiche en haut de l'écran.
+  • La largeur d'écran influe légèrement : sur un écran plus large, les
+    obstacles apparaissent un peu plus tôt, ce qui laisse une fraction de
+    seconde de plus pour réagir.

@@ -1,0 +1,6 @@
+{
+	"appId": "com.neonrun.game",
+	"appName": "Neon Run",
+	"webDir": "www",
+	"bundledWebRuntime": false
+}
