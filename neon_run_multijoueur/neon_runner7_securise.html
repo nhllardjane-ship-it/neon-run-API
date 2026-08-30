@@ -1462,16 +1462,7 @@
     return s;
   }
 
-  /* ---- Sécurité renforcée, réservée au panel admin (PBKDF2 + sel cryptographique) ----
-     Le hash ci-dessus reste utilisé pour les comptes joueurs (hors périmètre demandé).
-     Pour l'admin : dérivation PBKDF2-SHA256 native (WebCrypto), sel issu de
-     crypto.getRandomValues, et surtout plus AUCUN mot de passe par défaut en clair
-     dans le code — il est généré aléatoirement à la première ouverture et affiché
-     une seule fois. */
-  function hasStrongCrypto(){
-    try{ return !!(window.crypto&&window.crypto.subtle&&window.crypto.subtle.importKey); }
-    catch(e){ return false; }
-  }
+  
   function secureRandomBytes(n){
     const arr=new Uint8Array(n);
     try{ (window.crypto||window.msCrypto).getRandomValues(arr); }
@@ -1514,45 +1505,8 @@
   }
 
   let accounts=load(K.accounts,{});
-  /* ---- Accès admin par compte : le tout premier compte créé sur cet appareil
-     devient administrateur automatiquement (et le reste tant qu'un autre admin
-     n'existe pas), en plus du mot de passe maître existant. Migration : si aucun
-     compte n'a encore le rôle (comptes créés avant cette fonctionnalité), on le
-     donne au compte le plus ancien. ---- */
-  (function ensureFirstAdmin(){
-    let hasAdmin=false;
-    for(const u in accounts){ if(accounts[u].isAdmin){ hasAdmin=true; break; } }
-    if(hasAdmin) return;
-    let first=null;
-    for(const u in accounts){
-      if(!first||(accounts[u].created||0)<(accounts[first].created||0)) first=u;
-    }
-    if(first){ accounts[first].isAdmin=true; save(K.accounts,accounts); }
-  })();
-  function isAccountAdmin(u){ u=u||session; return !!(u&&accounts[u]&&accounts[u].isAdmin); }
-  if(!accounts||typeof accounts!=='object') accounts={};
-  let session=load(K.session,null);
-  if(session && !accounts[session]) session=null;
-
-  /* Reprise d'une sauvegarde d'avant les comptes : elle devient le profil invité */
-  (function migrate(){
-    if(localStorage.getItem(K.legacy)===null) return;
-    if(localStorage.getItem(K.guest)!==null) return;
-    const old={high:load('neonRun_high',0)|0,coins:load('neonRun_coins',0)|0,
-      owned:load('neonRun_owned',['cyan']),equipped:load('neonRun_equipped','cyan'),
-      ab:load('neonRun_abilities',{owned:[],levels:{}}),
-      lucky:load('neonRun_lucky',{opened:0,sinceAdmin:0}),trophies:[],runs:0};
-    save(K.guest,normalizeData(old));
-    ['neonRun_high','neonRun_coins','neonRun_owned','neonRun_equipped',
-     'neonRun_abilities','neonRun_lucky'].forEach(function(k){
-      try{ localStorage.removeItem(k); }catch(e){}
-    });
-  })();
-
-  let highScore=0, wallet=0, owned=['cyan'], equipped='cyan';
-  let abData={owned:[],levels:{}}, luckyData={opened:0,sinceAdmin:0};
-  let trophies=[], runsPlayed=0, passData=blankPass(), annSeen=0, codesUsed=[];
-
+  
+    
   function currentData(){
     return session && accounts[session] ? accounts[session].data : load(K.guest,blankData());
   }
@@ -1563,9 +1517,8 @@
     passData=d.pass; annSeen=tsSafe(d.annSeen); codesUsed=d.codesUsed;
   }
   function persist(){
-    const d={high:highScore,coins:wallet,owned:owned,equipped:equipped,
-             ab:abData,lucky:luckyData,trophies:trophies,runs:runsPlayed,
-             pass:passData,annSeen:annSeen,codesUsed:codesUsed};
+    const d:equipped,
+             ab:abDnSeen,codesUsed:codesUsed};
     if(session && accounts[session]){
       // Un autre onglet a pu modifier d'autres comptes entre-temps : on relit
       // et on ne réécrit que le nôtre, pour ne pas écraser leurs coupes.
@@ -1580,26 +1533,7 @@
     }
     else save(K.guest,d);
   }
-  /* ---- Bannissement ---- */
-  function banInfo(user){
-    const a=accounts[user];
-    if(!a||!a.ban) return null;
-    // Une sanction temporaire expire d'elle-même
-    if(a.ban.until && Date.now()>=a.ban.until){
-      delete a.ban; save(K.accounts,accounts);
-      return null;
-    }
-    return a.ban;
-  }
-  function myBan(){
-    if(isLogged()) return banInfo(session);
-    return admin.banGuest ? {reason:'Mode invité restreint',at:0,until:null,guest:true} : null;
-  }
-  function isBanned(){ return !!myBan(); }
-  function banRemaining(b){
-    if(!b||!b.until) return null;
-    return Math.max(0,b.until-Date.now());
-  }
+  
 
   function displayName(){ return session || 'INVITÉ'; }
   function isLogged(){ return !!(session && accounts[session]); }
