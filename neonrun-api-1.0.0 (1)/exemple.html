@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neon Run — tableau de bord d'exemple</title>
+<style>
+  :root{color-scheme:dark;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#050110;color:#e6e0ff;font:14px/1.6 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    padding:18px;display:flex;flex-direction:column;gap:14px;min-height:100vh;}
+  h1{font-size:17px;letter-spacing:2px;color:#00fff9;text-shadow:0 0 10px #00fff9;font-weight:900;}
+  .sub{font-size:12px;color:#8578a8;}
+  .row{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start;}
+  iframe{width:min(560px,100%);height:360px;border:1px solid rgba(139,47,255,.5);border-radius:10px;
+    background:#050110;}
+  .panel{flex:1;min-width:260px;display:flex;flex-direction:column;gap:10px;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:8px;}
+  .box{border:1px solid rgba(139,47,255,.4);border-radius:9px;padding:9px 11px;background:rgba(255,255,255,.03);}
+  .box .v{font-size:19px;font-weight:900;color:#fff;}
+  .box .k{font-size:9.5px;letter-spacing:1.4px;color:#8578a8;font-weight:700;}
+  .log{border:1px solid rgba(139,47,255,.3);border-radius:9px;padding:10px;height:190px;overflow:auto;
+    font-family:ui-monospace,Consolas,monospace;font-size:11.5px;background:rgba(10,4,26,.6);}
+  .log div{padding:1px 0;border-bottom:1px solid rgba(139,47,255,.12);}
+  .log b{color:#ff2fd0;}
+  button{font:inherit;font-weight:800;letter-spacing:1px;font-size:12px;cursor:pointer;
+    padding:8px 14px;border-radius:8px;color:#00fff9;background:rgba(0,255,249,.08);
+    border:1px solid rgba(0,255,249,.5);}
+  button:disabled{opacity:.45;cursor:default;}
+  .warn{border:1px solid #ff5c5c;border-radius:9px;padding:11px;color:#ffb4b4;font-size:12.5px;
+    background:rgba(255,92,92,.08);}
+  code{font-family:ui-monospace,Consolas,monospace;color:#00fff9;}
+</style>
+</head>
+<body>
+  <div>
+    <h1>NEON RUN — TABLEAU DE BORD D'EXEMPLE</h1>
+    <div class="sub">Tout ce que fait cette page passe par l'API publique du jeu. Rien d'autre.</div>
+  </div>
+
+  <div id="warn" class="warn" hidden></div>
+
+  <div class="row">
+    <iframe id="jeu" title="Neon Run"></iframe>
+    <div class="panel">
+      <div class="grid" id="stats"></div>
+      <div class="row">
+        <button id="play" disabled>LANCER UNE PARTIE</button>
+        <button id="lang" disabled>LANGUE SUIVANTE</button>
+        <button id="mute" disabled>COUPER LE SON</button>
+      </div>
+      <div class="log" id="log"></div>
+    </div>
+  </div>
+
+<script src="neonrun-api.js"></script>
+<script>
+(async function () {
+  // Par défaut le jeu est cherché à côté de cette page. Si tu l'as rangé
+  // ailleurs, indique-le dans l'adresse :  exemple.html?jeu=../le_jeu.html
+  var params = new URLSearchParams(location.search);
+  var chemin = params.get('jeu') || 'neon_runner7_securise.html';
+  document.getElementById('jeu').src = chemin;
+
+  var logEl = document.getElementById('log');
+  function log(kind, txt) {
+    var d = document.createElement('div');
+    d.innerHTML = '<b>' + kind + '</b> ' + txt;
+    logEl.insertBefore(d, logEl.firstChild);
+    while (logEl.childNodes.length > 120) logEl.removeChild(logEl.lastChild);
+  }
+
+  var api;
+  try {
+    api = await NeonRunClient.attach(document.getElementById('jeu'));
+  } catch (e) {
+    var w = document.getElementById('warn');
+    w.hidden = false;
+    w.innerHTML = 'Impossible de lire l\'API du jeu.<br>' +
+      'Cette page doit être servie par un serveur, pas ouverte en <code>file://</code> : ' +
+      'lance <code>python3 -m http.server 8000</code> dans ce dossier, puis ouvre ' +
+      '<code>http://localhost:8000/exemple.html</code>.<br>' +
+      'Jeu cherché à l\'adresse <code>' + chemin + '</code> — si ce n\'est pas la bonne, ' +
+      'ajoute <code>?jeu=chemin/vers/le/jeu.html</code>.<br>Détail : ' + e.message;
+    return;
+  }
+
+  log('API', 'connectée — version ' + api.raw.version);
+  ['play', 'lang', 'mute'].forEach(function (id) { document.getElementById(id).disabled = false; });
+
+  var CASES = [
+    ['score', 'SCORE'], ['runCoins', 'PIÈCES'], ['distance', 'DISTANCE'],
+    ['x', 'X'], ['y', 'Y'], ['speed', 'VITESSE'],
+    ['fps', 'FPS'], ['best', 'RECORD'], ['coins', 'TOTAL ◆']
+  ];
+  var statsEl = document.getElementById('stats');
+  statsEl.innerHTML = CASES.map(function (c) {
+    return '<div class="box"><div class="v" id="s-' + c[0] + '">—</div><div class="k">' + c[1] + '</div></div>';
+  }).join('');
+
+  api.poll(function (s) {
+    CASES.forEach(function (c) { document.getElementById('s-' + c[0]).textContent = s[c[0]]; });
+  }, 250);
+
+  api.on('run:start', function () { log('DÉPART', 'nouvelle partie'); });
+  api.on('run:end', function (d) {
+    log('FIN', 'score ' + d.score + ', ' + d.coins + ' pièces' + (d.record ? ' — NOUVEAU RECORD' : ''));
+  });
+  api.on('message', function (d) {
+    log('MESSAGE', (d.mine ? 'à ' : 'de ') + d.from + ' : ' + d.text);
+  });
+  api.on('peer', function (d) {
+    log('LIAISON', d.connected ? 'ouverte avec ' + d.name : 'fermée');
+  });
+  api.on('lang', function (d) { log('LANGUE', d.lang); });
+  api.on('screen', function (d) { log('ÉCRAN', d.screen); });
+
+  document.getElementById('play').onclick = function () { api.play(); };
+  document.getElementById('mute').onclick = function () {
+    var m = api.setMuted(!api.settings().muted);
+    this.textContent = m ? 'RÉTABLIR LE SON' : 'COUPER LE SON';
+  };
+  document.getElementById('lang').onclick = function () {
+    var ids = api.langs().map(function (l) { return l.id; });
+    var i = ids.indexOf(api.settings().lang);
+    api.setLang(ids[(i + 1) % ids.length]);
+  };
+}());
+</script>
+</body>
+</html>
