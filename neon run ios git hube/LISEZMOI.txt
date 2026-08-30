@@ -1,0 +1,72 @@
+NEON RUN — Version PWA (application installable)
+==================================================
+
+Ce dossier contient le jeu prêt à être hébergé comme une "PWA"
+(Progressive Web App) : installable depuis le navigateur sur Android ET
+iOS, avec icône sur l'écran d'accueil et fonctionnement hors-ligne après
+la première ouverture.
+
+Important : pour que l'installation fonctionne, ces fichiers doivent être
+hébergés sur un vrai site (https). Ouvrir index.html directement en
+double-cliquant (file://) ne suffit pas pour l'installation — les
+navigateurs l'exigent pour des raisons de sécurité.
+
+Options gratuites les plus simples pour héberger ce dossier :
+- Netlify Drop : https://app.netlify.com/drop (glisser-déposer ce dossier)
+- Vercel, Cloudflare Pages, GitHub Pages, itch.io (HTML5 project)
+
+Une fois en ligne :
+- Sur Android (Chrome) : menu ⋮ → "Ajouter à l'écran d'accueil" /
+  "Installer l'application"
+- Sur iOS (Safari) : bouton Partager → "Sur l'écran d'accueil"
+
+Contenu :
+- index.html   → le jeu (version sécurisée du panel admin incluse)
+- manifest.json → nom, icônes, couleurs de l'app installée
+- sw.js         → service worker (cache hors-ligne)
+- icons/        → icônes 192px / 512px / maskable / apple-touch-icon
+
+Pour mettre à jour le jeu plus tard : remplace index.html, et augmente
+le numéro de version dans sw.js (CACHE_NAME) pour que les joueurs qui
+l'ont déjà installé reçoivent la nouvelle version.
+
+LANGUE
+-------
+Menu ⚙ PARAMÈTRES : huit langues (français, anglais, espagnol, portugais,
+arabe, russe, chinois, hindi). Le choix est retenu par l'appareil. À la
+première ouverture, le jeu suit la langue du téléphone.
+
+MESSAGES PRIVÉS
+----------------
+Le menu 💬 MESSAGES permet de discuter avec un autre joueur. Les messages
+empruntent EXACTEMENT la même liaison directe (pair à pair) que la course :
+un seul échange de codes, aucun serveur, aucun compte en ligne. Une fois la
+liaison ouverte, vous pouvez discuter ET lancer une course depuis la même
+connexion.
+
+Ce qu'il faut savoir :
+  • Deux joueurs à la fois — c'est la limite du pair à pair.
+  • Tant que la liaison n'est pas ouverte, on ne peut pas envoyer : il n'y a
+    pas de boîte aux lettres qui garde un message pour plus tard.
+  • Les conversations restent sur l'appareil (12 correspondants, 300 messages
+    chacun) ; un message reçu hors de l'écran met une pastille sur le bouton.
+  • Recevoir un message pendant une partie ne l'interrompt pas.
+
+API DU JEU
+-----------
+Le jeu expose une interface JavaScript window.NeonRun : un autre script peut
+lire le score, les pièces, les skins, la partie en cours, écouter des
+évènements, changer la langue, ouvrir un écran, envoyer un message.
+
+Depuis la console du navigateur (F12), sur la page du jeu :
+      NeonRun.help()
+
+Le kit complet se télécharge depuis ⚙ PARAMÈTRES → API DU JEU :
+      neonrun-api.js     bibliothèque d'accès
+      neonrun-api.d.ts   types TypeScript
+      API.md             documentation complète
+      exemple.html       tableau de bord de démonstration
+
+La progression est en LECTURE SEULE : l'API ne donne ni pièces, ni skins, ni
+accès admin, et n'expose aucun mot de passe. Ce qui triche reste dans le panel
+admin, derrière son mot de passe.
